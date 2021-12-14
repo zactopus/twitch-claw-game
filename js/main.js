@@ -1,43 +1,47 @@
 /* global tmi */
 
-function getRandomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+function getRandomNumber(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-const COMMAND = "!move";
-const IMAGE_WIDTH = 375;
-const IMAGE_HEIGHT = 531;
-let ELEMENT_IMAGE_PERSON;
-let ELEMENT_IMAGE_TARGET;
-const MOVE_COUNT_TO_WIN = getRandomNumber(60, 80);
-const MAX_PIXEL_MOVED_PERSON_AMOUNT = 1080;
-const MOVE_PIXEL_AMOUNT = MAX_PIXEL_MOVED_PERSON_AMOUNT / MOVE_COUNT_TO_WIN;
+const WINDOW_WIDTH = 1280;
+const WINDOW_HEIGHT = 720;
 
 const STATE = {
-  person: {
-    imageFrame: 0,
-    moveCount: 0
+  directionMessageCount: 0,
+  target: {
+    element: null,
+    width: 100,
+    height: 100,
+    position: {
+      x: 0,
+      y: 0
+    }
+  },
+  claw: {
+    element: null,
+    width: 200,
+    height: 200,
+    position: {
+      x: 100,
+      y: 100
+    },    
+    instructions: {
+      element: null
+    },
+    graboMeter: {
+      element: null,
+      progressBar: {
+        element: null,
+        amount: 0,
+        maxAmount: 400,
+      }
+    },
   },
   game: {
     ended: false,
     winTimeout: null
   }
-};
-
-function preloadImage(filePath) {
-  const image = new Image(IMAGE_WIDTH, IMAGE_HEIGHT);
-  image.src = filePath;
-  return image.src;
-}
-
-const IMAGES = {
-  person: [
-    preloadImage("/images/person-1.png"),
-    preloadImage("/images/person-2.png"),
-    preloadImage("/images/person-3.png"),
-    preloadImage("/images/person-2.png")
-  ],
-  target: preloadImage("/images/target.png")
 };
 
 function getURLParamChannel() {
@@ -60,34 +64,108 @@ async function wait(time) {
   });
 }
 
-function getCurrentPersonPositionStyle() {
-  const movedAmount = STATE.person.moveCount * MOVE_PIXEL_AMOUNT;
-  const pixelAmount = MAX_PIXEL_MOVED_PERSON_AMOUNT - movedAmount;
-  return `transform: translateX(${pixelAmount}px);`;
+function updateGrab(newAmountChange) {
+  // grab cant below 0
+  if (STATE.claw.graboMeter.progressBar.amount + newAmountChange < 0) {
+    return;
+  } 
+
+  // grab cant above max
+  if (STATE.claw.graboMeter.progressBar.amount + newAmountChange > STATE.claw.graboMeter.progressBar.maxAmount) {
+    return;
+  }
+
+  STATE.claw.graboMeter.progressBar.amount += newAmountChange;
+  const percentage = Math.min(100, Math.floor(STATE.claw.graboMeter.progressBar.amount / STATE.claw.graboMeter.progressBar.maxAmount) * 100);
+  STATE.claw.graboMeter.progressBar.element.style.top = `${100 - percentage}%`
 }
 
-async function showPersonAndTarget() {
+// decrease grabometer on a loop
+// setInterval(() => {
+//   updateGrab(-1);
+// }, 100);
+
+
+function updateClaw(newPosition) {
+  const { x, y } = newPosition;
+
+  // can't go out of bounds x
+  if (x < 0 || x > WINDOW_WIDTH - STATE.claw.width) {
+    return;
+  }
+
+  // can't go out of bounds y
+  if (y < 0 || y > WINDOW_HEIGHT - STATE.claw.height) {
+    return;
+  }
+
+  STATE.claw.position = newPosition;
+  STATE.claw.element.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+async function loadContent() {
   document.body.innerHTML = `
     <main>
-      <img
-        width="${IMAGE_WIDTH}"
-        height="${IMAGE_HEIGHT}"
-        alt=""
-        src="${IMAGES.target}"
-        class="target"
-        />
-      <img
-        width="${IMAGE_WIDTH}"
-        height="${IMAGE_HEIGHT}"
-        alt=""
-        src="${IMAGES.person[0]}"
-        class="person"
-        style="${getCurrentPersonPositionStyle()}"
-        />
+      <div class="column column--left"></div>
+      <div class="column column--right"></div>
+
+      <div class="panel panel--top"></div>
+
+      <div class="claw">
+        <div class="claw__hand"></div>
+        <div class="claw__hand-cable"></div>
+        <div class="claw__instructions">
+          <div class="claw__instructions__text">
+            Move the claw<br />Type in chat
+          </div>
+          <div class="claw__instructions__direction claw__instructions__direction--up">
+            <div class="claw__instructions__direction__text">up</div>            
+            <div class="claw__instructions__direction__symbol">🢁</div> 
+          </div>
+          <div class="claw__instructions__direction claw__instructions__direction--right">
+            <div class="claw__instructions__direction__text">right</div>            
+            <div class="claw__instructions__direction__symbol">🢂</div>
+          </div>          
+          <div class="claw__instructions__direction claw__instructions__direction--down">
+            <div class="claw__instructions__direction__text">down</div>            
+            <div class="claw__instructions__direction__symbol">🢃</div>
+          </div>          
+          <div class="claw__instructions__direction claw__instructions__direction--left">
+            <div class="claw__instructions__direction__text">left</div>            
+            <div class="claw__instructions__direction__symbol">🢀</div>
+          </div>
+        </div>
+        <div class="claw__grab-o-meter">
+          <div class="claw__grab-o-meter__text">Grab-o-meter</div>
+          <div class="claw__grab-o-meter__progress">
+            <div class="claw__grab-o-meter__progress__bar"></div>
+          </div>
+          <div class="claw__grab-o-meter__grab-command">"grab"</div>
+        </div>
+      </div>
+
+      <div class="target"></div>
+
+      <div class="panel panel--bottom"></div>
     </main>
   `;
-  ELEMENT_IMAGE_PERSON = document.querySelector(".person");
-  ELEMENT_IMAGE_TARGET = document.querySelector(".target");
+
+  STATE.target.element = document.querySelector(".target");
+  STATE.claw.element = document.querySelector(".claw");
+  STATE.claw.instructions.element = document.querySelector(".claw__instructions");
+  STATE.claw.graboMeter.element = document.querySelector(".claw__grab-o-meter");
+  STATE.claw.graboMeter.progressBar.element = document.querySelector(".claw__grab-o-meter__progress__bar");
+
+  // move claw to right place
+  updateClaw({ x: STATE.claw.position.x, y: STATE.claw.position.y })
+
+  // move target to bottom
+  const spacer = 100;
+  const minimumLeft = 400; // TODO: this should be the win bin when i add this
+  const x = getRandomNumber(spacer + minimumLeft, WINDOW_WIDTH - STATE.target.width - spacer);
+  const y = getRandomNumber(370, WINDOW_HEIGHT - STATE.claw.height - spacer);
+  console.log({ x, y})
+  STATE.target.element.style.transform = `translate(${x}px, ${y}px)`
 
   await wait(500);
 }
@@ -98,44 +176,53 @@ function endTheGame({ twitchClient, countdownTimeout }) {
   twitchClient.disconnect();
 }
 
-function animatePerson({ isPersonMovingForward }) {
-  if (isPersonMovingForward) {
-    STATE.person.imageFrame += 1;
-  } else {
-    STATE.person.imageFrame -= 1;
+function handleMovement(message) {
+  const pixelMovementAmount = 20;
+
+  if (message.includes('up')) {
+    STATE.directionMessageCount += 1;
+    const { x, y: oldY } = STATE.claw.position;
+    const y = oldY - pixelMovementAmount;
+    updateClaw({ x, y })
   }
 
-  // loop back to the first frame when needed
-  if (STATE.person.imageFrame === IMAGES.person.length) {
-    STATE.person.imageFrame = 0;
-  } else if (STATE.person.imageFrame === -1) {
-    // loop to end if gone into negatives
-    STATE.person.imageFrame = IMAGES.person.length - 1;
+  if (message.includes('right')) {
+    STATE.directionMessageCount += 1;
+    const { x: oldX, y } = STATE.claw.position;
+    const x = oldX + pixelMovementAmount;
+    updateClaw({ x, y })
   }
-  ELEMENT_IMAGE_PERSON.src = IMAGES.person[STATE.person.imageFrame];
+
+  if (message.includes('down')) {
+    STATE.directionMessageCount += 1;
+    const { x, y: oldY } = STATE.claw.position;
+    const y = oldY + pixelMovementAmount;
+    console.log({x, y})
+    updateClaw({ x, y })
+  }
+
+  if (message.includes('left')) {
+    STATE.directionMessageCount += 1;
+    const { x: oldX, y } = STATE.claw.position;
+    const x = oldX - pixelMovementAmount;
+    updateClaw({ x, y })
+  }
+
+  if (STATE.directionMessageCount > 5) {
+    STATE.claw.instructions.element.style.opacity = '0';
+    STATE.claw.graboMeter.element.style.opacity = '1';
+  }
+
+  return;
 }
 
-function movePerson({ isPersonMovingForward }) {
-  if (isPersonMovingForward) {
-    STATE.person.moveCount += 1;
-  } else {
-    STATE.person.moveCount -= 1;
+function handleGrab(message) {
+  if (message.includes('grab')) {
+    updateGrab(10);
   }
 
-  ELEMENT_IMAGE_PERSON.style = getCurrentPersonPositionStyle();
-}
-
-function handleWin(callback) {
-  if (STATE.person.moveCount === MOVE_COUNT_TO_WIN) {
-    // win
-    ELEMENT_IMAGE_TARGET.classList.add("target--complete");
-
-    STATE.game.winTimeout = setTimeout(callback, 1000);
-  } else {
-    clearTimeout(STATE.game.winTimeout);
-    ELEMENT_IMAGE_TARGET.classList.remove("target--complete");
-  }
-}
+  return;
+} 
 
 function main() {
   const channel = getURLParamChannel();
@@ -150,36 +237,24 @@ function main() {
   twitchClient.on("connected", async () => {
     console.log("connected");
 
-    await showPersonAndTarget();
+    await loadContent();
     document.body.className = "loaded";
 
-    // if they run out of time end the game
-    const countdownTimeout = setTimeout(() => {
-      console.log("lose");
-      endTheGame({ twitchClient });
-    }, 35 * 1000); // 30 seconds is the current music, add a few seconds
-
-    twitchClient.on("message", (channel, tags, message) => {
+    twitchClient.on("message", (_channel, _tags, message) => {
       /*
-        if message doesnt start with !move
-        or game has ended dont do anything
+        if game has ended dont do anything
       */
-      if (!message.startsWith(COMMAND) || STATE.game.ended) {
+      console.log('STATE.game.ended', STATE.game.ended)
+      if (STATE.game.ended) {
         return;
       }
 
-      console.log("!move");
+      const processedMessage = message.toLowerCase();
 
-      // 10% chance of going backward
-      const isPersonMovingForward = getRandomNumber(0, 100) < 90;
+      console.log('processedMessage', processedMessage)
 
-      movePerson({ isPersonMovingForward });
-      animatePerson({ isPersonMovingForward });
-
-      handleWin(() => {
-        console.log("win");
-        endTheGame({ twitchClient, countdownTimeout });
-      });
+      handleMovement(processedMessage);
+      handleGrab(processedMessage);
     });
   });
 }

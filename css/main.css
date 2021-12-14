@@ -7,39 +7,244 @@
 }
 
 body {
+  font-family: sans-serif;
   background: transparent; /* no background in OBS */
 }
 
 main {
   position: relative;
   height: 100vh;
-  width: 85vw;
-  margin-left: 10vw;
-  margin-right: 5vw;
-  opacity: 0;
+  width: 100vw;
+  /* opacity: 0; */
   transition: opacity 0.5s ease-in;
+}
+
+/* glass effect */
+main::after {
+  z-index: 3;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .loaded main {
   opacity: 1;
 }
 
-.target,
-.person {
+.column {
+  z-index: 5;
+  position: absolute;
+  width: 30px;
+  height: 100vh;
+  top: 0;
+  bottom: 0;
+  background: #222;
+  box-shadow: 0 0 10px black;
+}
+
+.column--left {
+  left: 0;
+}
+
+.column--right {
+  right: 0;
+}
+
+.panel {
+  z-index: 4;
   position: absolute;
   left: 0;
-  top: calc(50% - (531px / 2));
+  right: 0;
+  height: 5vh;
+  background-image: url('/images/aluminum-texture.jpg');
+  box-shadow: 0 0 10px black;
+}
+
+.panel--top {
+  top: 0;
+}
+
+.panel--bottom {
+  bottom: 0;
+}
+
+.claw {
+  z-index: 2;
+  position: absolute;
+  left: 0;
+  top: 0; 
+  filter: drop-shadow(0 0 30px black);
+  transition: transform 0.16s linear;
+}
+
+.claw__hand {
+  z-index: 2;
+  position: absolute;
+  left: 0;
+  top: 0; 
+  height: 200px;
+  width: 200px;
+  background-image: url('/images/claw-hand.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+}
+
+.claw__hand-cable {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  top: 0; 
+  content: '';
+  width: 40px;
+  height: 100vh;
+  transform: translateX(80px) translateY(-95vh);
+  background-image: url('/images/claw-cable-tile.png');
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+}
+
+.claw__instructions {
+  position: absolute;
+  left: 200px;
+  top: 0;
+  width: 400px;
+  height: 200px;
+  transition: opacity 0.5s ease-in;
+  opacity: 1;
+}
+
+
+.claw__instructions__text {
+  font-weight: 700;
+  font-size: 1.5em;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 0 0 10px black;
+  -webkit-text-stroke: 1px black;
+}
+
+.claw__instructions__direction {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  padding: 0.5em;
+  font-size: 1.75em;
+  background: white;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+}
+
+.claw__instructions__direction--up {
+  left: 120px;
+  top: 60px;
+}
+
+.claw__instructions__direction--right {
+  top: 110px;
+  right: 70px;
+}
+
+.claw__instructions__direction--down {
+  bottom: -70px;
+  left: 120px;
+}
+
+.claw__instructions__direction--left {
+  top: 110px;
+  left: 10px;
+}
+
+.claw__instructions__direction__text,
+.claw__instructions__direction__symbol {
+  text-align: center;
+}
+
+.claw__grab-o-meter {
+  position: absolute;
+  left: 200px;
+  top: 0;
+  width: 400px;
+  height: 200px;
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+}
+
+.claw__grab-o-meter--visible {
+  opacity: 1;
+}
+
+.claw__grab-o-meter__text {
+  position: absolute;
+  left: 0.5em;
+  top: -0.5em;
+  transform-origin: bottom left;
+  transform: rotate(90deg);
+  font-weight: 700;
+  font-size: 1.25em;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 0 0 10px black;
+  -webkit-text-stroke: 1px black;
+}
+
+.claw__grab-o-meter__progress {
+  position: absolute;
+  left: 3em;
+  top: 1em;
+  border: 4px solid #ddd;
+  width: 50px;
+  height: 150px;
+  box-shadow: 0 0 10px black;
+  background: black;
+  border-radius: 5px;
+}
+
+.claw__grab-o-meter__progress__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: linear-gradient(to top, red, orange, yellow, green, blue, indigo);
+}
+
+.claw__grab-o-meter__grab-command {
+  position: absolute;
+  left: 2.5em;
+  top: 0.5em;
+  font-weight: 800;
+  font-size: 3em;
+  color: white;
+  text-shadow: 0 0 5px black;
+  -webkit-text-stroke: 2px black;
+  transform-origin: center center;
+  animation: wiggleGrabCommand 0.5s infinite alternate;
+}
+
+@keyframes wiggleGrabCommand {
+  0% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: translateY(10px) rotate(5deg);
+  }
 }
 
 .target {
-  filter: hue-rotate(0deg);
-  transition: filter 1s ease-in;
-}
-
-.target--complete {
-  filter: hue-rotate(180deg);
-}
-
-.person {
-  transition: transform 0.1s linear;
+  opacity: 0; /* temporarily hide this */
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100px;
+  width: 100px;
+  background: orange;
+  border-radius: 50%;
+  transition: transform 0.16s linear;
 }
