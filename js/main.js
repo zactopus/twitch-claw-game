@@ -1,5 +1,9 @@
 /* global tmi */
 
+function remapNumberRange(value, inMin, inMax, outMin, outMax) {
+  return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}
+
 function getRandomNumber(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
@@ -25,7 +29,15 @@ const STATE = {
     position: {
       x: 100,
       y: 100
-    },    
+    },
+    fingers: {
+      left: {
+        element: null
+      },
+      right: {
+        element: null
+      }
+    },
     instructions: {
       element: null
     },
@@ -39,8 +51,7 @@ const STATE = {
     },
   },
   game: {
-    ended: false,
-    winTimeout: null
+    ended: false
   }
 };
 
@@ -66,25 +77,30 @@ async function wait(time) {
 
 function updateGrab(newAmountChange) {
   // grab cant below 0
-  if (STATE.claw.graboMeter.progressBar.amount + newAmountChange < 0) {
+  if ((STATE.claw.graboMeter.progressBar.amount + newAmountChange) < 0) {
     return;
-  } 
+  }
 
-  // grab cant above max
-  if (STATE.claw.graboMeter.progressBar.amount + newAmountChange > STATE.claw.graboMeter.progressBar.maxAmount) {
+  // grab cant go above max
+  if ((STATE.claw.graboMeter.progressBar.amount + newAmountChange) > STATE.claw.graboMeter.progressBar.maxAmount) {
     return;
   }
 
   STATE.claw.graboMeter.progressBar.amount += newAmountChange;
-  const percentage = Math.min(100, Math.floor(STATE.claw.graboMeter.progressBar.amount / STATE.claw.graboMeter.progressBar.maxAmount) * 100);
+  const percentage = Math.min(
+    100,
+    Math.floor((STATE.claw.graboMeter.progressBar.amount / STATE.claw.graboMeter.progressBar.maxAmount) * 100)
+  );
+
   STATE.claw.graboMeter.progressBar.element.style.top = `${100 - percentage}%`
+  
+  updateClawFingers({ percentage })
 }
 
 // decrease grabometer on a loop
-// setInterval(() => {
-//   updateGrab(-1);
-// }, 100);
-
+setInterval(() => {
+  updateGrab(-1);
+}, 100);
 
 function updateClaw(newPosition) {
   const { x, y } = newPosition;
@@ -103,16 +119,28 @@ function updateClaw(newPosition) {
   STATE.claw.element.style.transform = `translate(${x}px, ${y}px)`;
 }
 
+function updateClawFingers({ percentage }) {
+  const amount = remapNumberRange(percentage, 0, 100, -18, 5);
+  STATE.claw.fingers.left.element.style.transform = `rotate(${amount * -1}deg)`;
+  STATE.claw.fingers.right.element.style.transform = `rotate(${amount}deg)`;
+}
+
 async function loadContent() {
   document.body.innerHTML = `
     <main>
       <div class="column column--left"></div>
       <div class="column column--right"></div>
 
+      <div class="winbox"></div>
+      <div class="joystick"></div>
+
       <div class="panel panel--top"></div>
 
       <div class="claw">
-        <div class="claw__hand"></div>
+        <div class="claw__hand">
+          <div class="claw__hand__finger claw__hand__finger--left"></div>
+          <div class="claw__hand__finger claw__hand__finger--right"></div>
+        </div>
         <div class="claw__hand-cable"></div>
         <div class="claw__instructions">
           <div class="claw__instructions__text">
@@ -152,12 +180,15 @@ async function loadContent() {
 
   STATE.target.element = document.querySelector(".target");
   STATE.claw.element = document.querySelector(".claw");
+  STATE.claw.fingers.left.element = document.querySelector('.claw__hand__finger--left');
+  STATE.claw.fingers.right.element = document.querySelector('.claw__hand__finger--right');
   STATE.claw.instructions.element = document.querySelector(".claw__instructions");
   STATE.claw.graboMeter.element = document.querySelector(".claw__grab-o-meter");
   STATE.claw.graboMeter.progressBar.element = document.querySelector(".claw__grab-o-meter__progress__bar");
 
   // move claw to right place
   updateClaw({ x: STATE.claw.position.x, y: STATE.claw.position.y })
+  updateClawFingers({ percentage: 0 })
 
   // move target to bottom
   const spacer = 100;
@@ -177,7 +208,7 @@ function endTheGame({ twitchClient, countdownTimeout }) {
 }
 
 function handleMovement(message) {
-  const pixelMovementAmount = 20;
+  const pixelMovementAmount = 15;
 
   if (message.includes('up')) {
     STATE.directionMessageCount += 1;
@@ -244,14 +275,11 @@ function main() {
       /*
         if game has ended dont do anything
       */
-      console.log('STATE.game.ended', STATE.game.ended)
       if (STATE.game.ended) {
         return;
       }
 
       const processedMessage = message.toLowerCase();
-
-      console.log('processedMessage', processedMessage)
 
       handleMovement(processedMessage);
       handleGrab(processedMessage);

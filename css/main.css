@@ -54,6 +54,28 @@ main::after {
   right: 0;
 }
 
+.joystick {
+  z-index: 5;
+  position: absolute;
+  bottom: 0;
+  right: 200px;
+  width: 393px;
+  height: 124px;
+  background-image: url('/images/joystick.png');
+  background-repeat: no-repeat;
+}
+
+.winbox {
+  z-index: 4;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 310px;
+  height: 236px;
+  background-image: url('/images/winbox.png');
+  background-repeat: no-repeat;
+}
+
 .panel {
   z-index: 4;
   position: absolute;
@@ -93,6 +115,30 @@ main::after {
   background-position: top center;
 }
 
+.claw__hand__finger {
+  z-index: 2;
+  position: absolute;
+  top: 28px; 
+  width: 66px;
+  height: 172px;
+  background-image: url('/images/claw-finger.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: transform 0.16 linear;
+}
+
+.claw__hand__finger--left {
+  transform-origin: 56px 6px;
+  left: -2px;
+  background-image: url('/images/claw-finger-left.png');
+}
+
+.claw__hand__finger--right {
+  transform-origin: 10px 6px;
+  background-image: url('/images/claw-finger-right.png');
+  right: -2px;
+}
+
 .claw__hand-cable {
   z-index: 1;
   position: absolute;
@@ -107,16 +153,19 @@ main::after {
   background-size: 100% auto;
 }
 
+.claw__grab-o-meter,
+.claw__instructions {
+  left: 250px;
+}
+
 .claw__instructions {
   position: absolute;
-  left: 200px;
   top: 0;
   width: 400px;
   height: 200px;
   transition: opacity 0.5s ease-in;
   opacity: 1;
 }
-
 
 .claw__instructions__text {
   font-weight: 700;
@@ -133,12 +182,13 @@ main::after {
   height: 100px;
   padding: 0.5em;
   font-size: 1.75em;
-  background: white;
+  background: rgba(255,255,255,0.85);
   border-radius: 5px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-content: center;
+  box-shadow: 0 0 10px black;
 }
 
 .claw__instructions__direction--up {
@@ -168,7 +218,6 @@ main::after {
 
 .claw__grab-o-meter {
   position: absolute;
-  left: 200px;
   top: 0;
   width: 400px;
   height: 200px;
@@ -213,6 +262,7 @@ main::after {
   right: 0;
   top: 100%;
   background: linear-gradient(to top, red, orange, yellow, green, blue, indigo);
+  transition: top 0.16s linear;
 }
 
 .claw__grab-o-meter__grab-command {
