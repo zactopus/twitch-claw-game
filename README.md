@@ -1,4 +1,4 @@
-# twitch-claw-game
+# twitch-claw-game [![Netlify Status](https://api.netlify.com/api/v1/badges/51d07fd3-a625-419b-bfa2-a3b085be7b50/deploy-status)](https://app.netlify.com/sites/twitch-claw-game/deploys)
 
 a twitch game overlay for OBS, for [rosco](https://www.twitch.tv/rosco)
 
