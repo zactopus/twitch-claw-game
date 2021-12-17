@@ -23,6 +23,20 @@ main {
   opacity: 1;
 }
 
+.timer {
+  z-index: 6;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 3em;
+  padding: 0.5em;
+  color: white;
+  background: black;
+  border-radius: 10px;
+  transition: opacity 1s;
+  opacity: 0;
+}
+
 /* glass effect */
 main::after {
   z-index: 3;
@@ -54,15 +68,64 @@ main::after {
   right: 0;
 }
 
-.joystick {
+.user {
+  z-index: 7;
+  position: absolute;
+  bottom: 50px;
+  right: 250px;
+  animation: userInAndOut 1s ease-in-out;
+  opacity: 0;
+}
+
+.user__text {
+  border-radius: 10px;
+  padding: 0.25em 0.5em;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-weight: 800;
+}
+
+@keyframes userInAndOut {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    transform: translate(0, 0)
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, -10%);
+    opacity: 0;
+  }
+}
+
+.joystick-box {
   z-index: 5;
   position: absolute;
   bottom: 0;
   right: 200px;
-  width: 393px;
-  height: 124px;
+  width: 391px;
+  height: 62px;
+  background-image: url('/images/joystick-box.png');
+  background-repeat: no-repeat;
+}
+
+.joystick {
+  z-index: 6;
+  position: absolute;
+  bottom: 27px;
+  right: 370px;
+  width: 59px;
+  height: 96px;
   background-image: url('/images/joystick.png');
   background-repeat: no-repeat;
+  transform-origin: 50% bottom;
+  transition: transform 0.15s ease-in;
 }
 
 .winbox {
@@ -161,10 +224,10 @@ main::after {
 .claw__instructions {
   position: absolute;
   top: 0;
-  width: 400px;
+  width: 300px;
   height: 200px;
   transition: opacity 0.5s ease-in;
-  opacity: 1;
+  opacity: 0;
 }
 
 .claw__instructions__text {
@@ -191,23 +254,13 @@ main::after {
   box-shadow: 0 0 10px black;
 }
 
-.claw__instructions__direction--up {
-  left: 120px;
-  top: 60px;
-}
-
 .claw__instructions__direction--right {
-  top: 110px;
+  top: 80px;
   right: 70px;
 }
 
-.claw__instructions__direction--down {
-  bottom: -70px;
-  left: 120px;
-}
-
 .claw__instructions__direction--left {
-  top: 110px;
+  top: 80px;
   left: 10px;
 }
 
@@ -261,29 +314,35 @@ main::after {
   left: 0;
   right: 0;
   top: 100%;
-  background: linear-gradient(to top, red, orange, yellow, green, blue, indigo);
-  transition: top 0.16s linear;
+  background: hsl(0, 45%, 45%);
+  transition: all 0.16s linear;
 }
 
 .claw__grab-o-meter__grab-command {
   position: absolute;
-  left: 2.5em;
+  left: 4em;
   top: 0.5em;
-  font-weight: 800;
-  font-size: 3em;
-  color: white;
-  text-shadow: 0 0 5px black;
-  -webkit-text-stroke: 2px black;
+  height: 100px;
+  padding: 0.5em 1em;
+  font-size: 2em;
+  font-weight: 700;
+  background: rgba(255,255,255,0.85);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  box-shadow: 0 0 10px black;
   transform-origin: center center;
   animation: wiggleGrabCommand 0.5s infinite alternate;
 }
 
 @keyframes wiggleGrabCommand {
   0% {
-    transform: rotate(-5deg);
+    transform: translateY(-5px);
   }
   100% {
-    transform: translateY(10px) rotate(5deg);
+    transform: translateY(5px) ;
   }
 }
 
