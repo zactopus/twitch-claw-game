@@ -1,11 +1,12 @@
 /* global tmi */
 
 function remapNumberRange(value, inMin, inMax, outMin, outMax) {
-  return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+  return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
 
-function getRandomNumber(min, max) { // min and max included 
-  return Math.floor(Math.random() * (max - min + 1) + min)
+function getRandomNumber(min, max) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 const WINDOW_WIDTH = 1280;
@@ -19,8 +20,8 @@ const STATE = {
     height: 100,
     position: {
       x: 0,
-      y: 0
-    }
+      y: 0,
+    },
   },
   claw: {
     element: null,
@@ -28,18 +29,18 @@ const STATE = {
     height: 200,
     position: {
       x: 100,
-      y: 100
+      y: 100,
     },
     fingers: {
       left: {
-        element: null
+        element: null,
       },
       right: {
-        element: null
-      }
+        element: null,
+      },
     },
     instructions: {
-      element: null
+      element: null,
     },
     graboMeter: {
       element: null,
@@ -47,12 +48,12 @@ const STATE = {
         element: null,
         amount: 0,
         maxAmount: 400,
-      }
+      },
     },
   },
   game: {
-    ended: false
-  }
+    ended: false,
+  },
 };
 
 function getURLParamChannel() {
@@ -63,38 +64,45 @@ function getURLParamChannel() {
 function connectBotToChannel(channel) {
   const twitchClient = new tmi.Client({
     connection: { reconnect: true },
-    channels: [channel]
+    channels: [channel],
   });
   twitchClient.connect();
   return twitchClient;
 }
 
 async function wait(time) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(resolve, time);
   });
 }
 
 function updateGrab(newAmountChange) {
   // grab cant below 0
-  if ((STATE.claw.graboMeter.progressBar.amount + newAmountChange) < 0) {
+  if (STATE.claw.graboMeter.progressBar.amount + newAmountChange < 0) {
     return;
   }
 
   // grab cant go above max
-  if ((STATE.claw.graboMeter.progressBar.amount + newAmountChange) > STATE.claw.graboMeter.progressBar.maxAmount) {
+  if (
+    STATE.claw.graboMeter.progressBar.amount + newAmountChange >
+    STATE.claw.graboMeter.progressBar.maxAmount
+  ) {
     return;
   }
 
   STATE.claw.graboMeter.progressBar.amount += newAmountChange;
   const percentage = Math.min(
     100,
-    Math.floor((STATE.claw.graboMeter.progressBar.amount / STATE.claw.graboMeter.progressBar.maxAmount) * 100)
+    Math.floor(
+      (STATE.claw.graboMeter.progressBar.amount /
+        STATE.claw.graboMeter.progressBar.maxAmount) *
+        100
+    )
   );
 
-  STATE.claw.graboMeter.progressBar.element.style.top = `${100 - percentage}%`
-  
-  updateClawFingers({ percentage })
+  STATE.claw.graboMeter.progressBar.element.style.top = `${100 - percentage}%`;
+
+  updateClawFingers({ percentage });
 }
 
 // decrease grabometer on a loop
@@ -128,6 +136,8 @@ function updateClawFingers({ percentage }) {
 async function loadContent() {
   document.body.innerHTML = `
     <main>
+      <div class="timer"></div>
+
       <div class="column column--left"></div>
       <div class="column column--right"></div>
 
@@ -180,23 +190,34 @@ async function loadContent() {
 
   STATE.target.element = document.querySelector(".target");
   STATE.claw.element = document.querySelector(".claw");
-  STATE.claw.fingers.left.element = document.querySelector('.claw__hand__finger--left');
-  STATE.claw.fingers.right.element = document.querySelector('.claw__hand__finger--right');
-  STATE.claw.instructions.element = document.querySelector(".claw__instructions");
+  STATE.claw.fingers.left.element = document.querySelector(
+    ".claw__hand__finger--left"
+  );
+  STATE.claw.fingers.right.element = document.querySelector(
+    ".claw__hand__finger--right"
+  );
+  STATE.claw.instructions.element = document.querySelector(
+    ".claw__instructions"
+  );
   STATE.claw.graboMeter.element = document.querySelector(".claw__grab-o-meter");
-  STATE.claw.graboMeter.progressBar.element = document.querySelector(".claw__grab-o-meter__progress__bar");
+  STATE.claw.graboMeter.progressBar.element = document.querySelector(
+    ".claw__grab-o-meter__progress__bar"
+  );
 
   // move claw to right place
-  updateClaw({ x: STATE.claw.position.x, y: STATE.claw.position.y })
-  updateClawFingers({ percentage: 0 })
+  updateClaw({ x: STATE.claw.position.x, y: STATE.claw.position.y });
+  updateClawFingers({ percentage: 0 });
 
   // move target to bottom
   const spacer = 100;
   const minimumLeft = 400; // TODO: this should be the win bin when i add this
-  const x = getRandomNumber(spacer + minimumLeft, WINDOW_WIDTH - STATE.target.width - spacer);
+  const x = getRandomNumber(
+    spacer + minimumLeft,
+    WINDOW_WIDTH - STATE.target.width - spacer
+  );
   const y = getRandomNumber(370, WINDOW_HEIGHT - STATE.claw.height - spacer);
-  console.log({ x, y})
-  STATE.target.element.style.transform = `translate(${x}px, ${y}px)`
+  console.log({ x, y });
+  STATE.target.element.style.transform = `translate(${x}px, ${y}px)`;
 
   await wait(500);
 }
@@ -210,50 +231,50 @@ function endTheGame({ twitchClient, countdownTimeout }) {
 function handleMovement(message) {
   const pixelMovementAmount = 15;
 
-  if (message.includes('up')) {
+  if (message.includes("up")) {
     STATE.directionMessageCount += 1;
     const { x, y: oldY } = STATE.claw.position;
     const y = oldY - pixelMovementAmount;
-    updateClaw({ x, y })
+    updateClaw({ x, y });
   }
 
-  if (message.includes('right')) {
+  if (message.includes("right")) {
     STATE.directionMessageCount += 1;
     const { x: oldX, y } = STATE.claw.position;
     const x = oldX + pixelMovementAmount;
-    updateClaw({ x, y })
+    updateClaw({ x, y });
   }
 
-  if (message.includes('down')) {
+  if (message.includes("down")) {
     STATE.directionMessageCount += 1;
     const { x, y: oldY } = STATE.claw.position;
     const y = oldY + pixelMovementAmount;
-    console.log({x, y})
-    updateClaw({ x, y })
+    console.log({ x, y });
+    updateClaw({ x, y });
   }
 
-  if (message.includes('left')) {
+  if (message.includes("left")) {
     STATE.directionMessageCount += 1;
     const { x: oldX, y } = STATE.claw.position;
     const x = oldX - pixelMovementAmount;
-    updateClaw({ x, y })
+    updateClaw({ x, y });
   }
 
   if (STATE.directionMessageCount > 5) {
-    STATE.claw.instructions.element.style.opacity = '0';
-    STATE.claw.graboMeter.element.style.opacity = '1';
+    STATE.claw.instructions.element.style.opacity = "0";
+    STATE.claw.graboMeter.element.style.opacity = "1";
   }
 
   return;
 }
 
 function handleGrab(message) {
-  if (message.includes('grab')) {
+  if (message.includes("grab")) {
     updateGrab(10);
   }
 
   return;
-} 
+}
 
 function main() {
   const channel = getURLParamChannel();
