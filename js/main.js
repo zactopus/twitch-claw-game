@@ -28,7 +28,7 @@ const STATE = {
     width: 200,
     height: 200,
     position: {
-      x: 100,
+      x: 60,
       y: 100,
     },
     fingers: {
@@ -51,7 +51,16 @@ const STATE = {
       },
     },
   },
+  timer: {
+    element: null,
+    countdown: 30,
+  },
+  joystick: {
+    element: null,
+  },
   game: {
+    canChatGrab: false,
+    canChatMoveClaw: true,
     ended: false,
   },
 };
@@ -101,13 +110,14 @@ function updateGrab(newAmountChange) {
   );
 
   STATE.claw.graboMeter.progressBar.element.style.top = `${100 - percentage}%`;
+  STATE.claw.graboMeter.progressBar.element.style.backgroundColor = `hsl(${percentage}, 45%, 45%)`;
 
   updateClawFingers({ percentage });
 }
 
 // decrease grabometer on a loop
 setInterval(() => {
-  updateGrab(-1);
+  updateGrab(-5);
 }, 100);
 
 function updateClaw(newPosition) {
@@ -143,6 +153,7 @@ async function loadContent() {
 
       <div class="winbox"></div>
       <div class="joystick"></div>
+      <div class="joystick-box"></div>
 
       <div class="panel panel--top"></div>
 
@@ -156,18 +167,10 @@ async function loadContent() {
           <div class="claw__instructions__text">
             Move the claw<br />Type in chat
           </div>
-          <div class="claw__instructions__direction claw__instructions__direction--up">
-            <div class="claw__instructions__direction__text">up</div>            
-            <div class="claw__instructions__direction__symbol">🢁</div> 
-          </div>
           <div class="claw__instructions__direction claw__instructions__direction--right">
             <div class="claw__instructions__direction__text">right</div>            
             <div class="claw__instructions__direction__symbol">🢂</div>
-          </div>          
-          <div class="claw__instructions__direction claw__instructions__direction--down">
-            <div class="claw__instructions__direction__text">down</div>            
-            <div class="claw__instructions__direction__symbol">🢃</div>
-          </div>          
+          </div>
           <div class="claw__instructions__direction claw__instructions__direction--left">
             <div class="claw__instructions__direction__text">left</div>            
             <div class="claw__instructions__direction__symbol">🢀</div>
@@ -178,7 +181,7 @@ async function loadContent() {
           <div class="claw__grab-o-meter__progress">
             <div class="claw__grab-o-meter__progress__bar"></div>
           </div>
-          <div class="claw__grab-o-meter__grab-command">"grab"</div>
+          <div class="claw__grab-o-meter__grab-command">grab</div>
         </div>
       </div>
 
@@ -203,6 +206,8 @@ async function loadContent() {
   STATE.claw.graboMeter.progressBar.element = document.querySelector(
     ".claw__grab-o-meter__progress__bar"
   );
+  STATE.timer.element = document.querySelector(".timer");
+  STATE.joystick.element = document.querySelector(".joystick");
 
   // move claw to right place
   updateClaw({ x: STATE.claw.position.x, y: STATE.claw.position.y });
@@ -218,8 +223,6 @@ async function loadContent() {
   const y = getRandomNumber(370, WINDOW_HEIGHT - STATE.claw.height - spacer);
   console.log({ x, y });
   STATE.target.element.style.transform = `translate(${x}px, ${y}px)`;
-
-  await wait(500);
 }
 
 function endTheGame({ twitchClient, countdownTimeout }) {
@@ -228,55 +231,150 @@ function endTheGame({ twitchClient, countdownTimeout }) {
   twitchClient.disconnect();
 }
 
-function handleMovement(message) {
-  const pixelMovementAmount = 15;
+function handleMovement({ message, user }) {
+  const pixelMovementAmount = 35;
 
-  if (message.includes("up")) {
+  if (!STATE.game.canChatMoveClaw) {
+    return;
+  }
+
+  if (message.includes("left")) {
+    emitUser(user);
     STATE.directionMessageCount += 1;
-    const { x, y: oldY } = STATE.claw.position;
-    const y = oldY - pixelMovementAmount;
+    const { x: oldX, y } = STATE.claw.position;
+    const x = oldX - pixelMovementAmount;
+    moveJoystick({ left: true });
     updateClaw({ x, y });
   }
 
   if (message.includes("right")) {
+    emitUser(user);
+    moveJoystick({ right: true });
     STATE.directionMessageCount += 1;
     const { x: oldX, y } = STATE.claw.position;
     const x = oldX + pixelMovementAmount;
     updateClaw({ x, y });
   }
 
-  if (message.includes("down")) {
-    STATE.directionMessageCount += 1;
-    const { x, y: oldY } = STATE.claw.position;
-    const y = oldY + pixelMovementAmount;
-    console.log({ x, y });
-    updateClaw({ x, y });
+  return;
+}
+
+function handleGrab({ message, user }) {
+  if (!STATE.game.canChatGrab) {
+    return false;
   }
 
-  if (message.includes("left")) {
-    STATE.directionMessageCount += 1;
-    const { x: oldX, y } = STATE.claw.position;
-    const x = oldX - pixelMovementAmount;
-    updateClaw({ x, y });
-  }
-
-  if (STATE.directionMessageCount > 5) {
-    STATE.claw.instructions.element.style.opacity = "0";
-    STATE.claw.graboMeter.element.style.opacity = "1";
+  if (message.includes("grab")) {
+    emitUser(user);
+    updateGrab(50);
   }
 
   return;
 }
 
-function handleGrab(message) {
-  if (message.includes("grab")) {
-    updateGrab(10);
+function updateTimer() {
+  STATE.timer.element.innerText = `${STATE.timer.countdown}s`;
+}
+
+let joystickTimeout = null;
+function moveJoystick({ left, right }) {
+  if (joystickTimeout) {
+    clearTimeout(joystickTimeout);
+    joystickTimeout = null;
   }
 
-  return;
+  if (left) {
+    STATE.joystick.element.style.transform = "rotate(-10deg)";
+  }
+
+  if (right) {
+    STATE.joystick.element.style.transform = "rotate(10deg)";
+  }
+
+  joystickTimeout = setTimeout(() => {
+    STATE.joystick.element.style.transform = "rotate(0deg)";
+  }, 500);
+}
+
+function atEndOfCountdown() {
+  // stop chat from being able move claw
+  STATE.game.canChatMoveClaw = false;
+
+  // hide timer
+  STATE.timer.element.style.opacity = 0;
+
+  // hide instruction
+  STATE.claw.instructions.element.style.opacity = "0";
+
+  // move claw to bottom of the screen
+  const { x } = STATE.claw.position;
+  const y = WINDOW_HEIGHT - STATE.claw.height - 100;
+  updateClaw({ x, y });
+
+  // let chat start grabbing
+  STATE.game.canChatGrab = true;
+  STATE.claw.graboMeter.element.style.opacity = "1";
+}
+
+function moveClawBackToWinArea() {
+  const grabTime = 5000;
+  setTimeout(() => {
+    const delay = 2000;
+    STATE.claw.element.style.transitionDuration = `${delay}ms`;
+
+    // move claw to top of the screen
+    const { x } = STATE.claw.position;
+    const y = 100;
+    updateClaw({ x, y });
+
+    setTimeout(() => {
+      // move claw to the left
+      const { y } = STATE.claw.position;
+      const x = 60;
+      updateClaw({ x, y });
+
+      setTimeout(() => {
+        STATE.game.canChatGrab = false;
+        STATE.claw.graboMeter.element.style.opacity = "0";
+        STATE.claw.graboMeter.progressBar.amount = 0;
+        updateClawFingers({ percentage: 0 });
+        STATE.game.ended = true;
+      }, delay + 100);
+    }, delay + 100);
+  }, grabTime);
+}
+
+function emitUser(user) {
+  const animationDuration = 1000;
+
+  const userElement = document.createElement("div");
+  userElement.className = "user";
+  userElement.style.animationDuration = `${animationDuration}ms`;
+
+  const userTextElement = document.createElement("div");
+  userTextElement.className = "user__text";
+
+  userTextElement.innerText = user.username;
+  userTextElement.style.color = user.color || "#fff";
+  const translateString = `translate(${getRandomNumber(
+    -15,
+    50
+  )}%,  ${getRandomNumber(-15, 15)}%)`;
+  const rotateString = `rotate(${getRandomNumber(-10, 10)}deg)`;
+  userTextElement.style.transform = `${translateString} ${rotateString}`;
+
+  userElement.appendChild(userTextElement);
+  document.body.appendChild(userElement);
+
+  setTimeout(() => {
+    userElement.remove();
+  }, animationDuration + 100);
 }
 
 function main() {
+  loadContent();
+  document.body.className = "loaded";
+
   const channel = getURLParamChannel();
 
   // if there's no channel just stop
@@ -286,13 +384,36 @@ function main() {
 
   const twitchClient = connectBotToChannel(channel);
 
-  twitchClient.on("connected", async () => {
+  twitchClient.on("connected", () => {
     console.log("connected");
 
-    await loadContent();
-    document.body.className = "loaded";
+    STATE.claw.instructions.element.style.opacity = "1";
+    STATE.timer.element.style.opacity = "1";
 
-    twitchClient.on("message", (_channel, _tags, message) => {
+    updateTimer();
+    const countdownInterval = setInterval(() => {
+      if (STATE.timer.countdown === 0) {
+        clearInterval(countdownInterval);
+        atEndOfCountdown();
+        moveClawBackToWinArea();
+        return;
+      }
+
+      STATE.timer.countdown -= 1;
+      updateTimer();
+    }, 1000); // 1 sec
+
+    twitchClient.on("message", (_channel, data, message) => {
+      console.log("data", data);
+      const processedMessage = message.toLowerCase();
+      const isBroadcaster =
+        data && data.badges && data.badges.broadcaster === "1";
+      const user = {
+        username: data.username,
+        color: data.color,
+        isBroadcaster,
+      };
+
       /*
         if game has ended dont do anything
       */
@@ -300,10 +421,13 @@ function main() {
         return;
       }
 
-      const processedMessage = message.toLowerCase();
+      if (user.isBroadcaster && processedMessage.includes("restart")) {
+        window.location.reload();
+        return;
+      }
 
-      handleMovement(processedMessage);
-      handleGrab(processedMessage);
+      handleMovement({ message: processedMessage, user });
+      handleGrab({ message: processedMessage, user });
     });
   });
 }
