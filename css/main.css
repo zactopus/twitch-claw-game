@@ -187,7 +187,7 @@ main::after {
   background-image: url('/images/claw-finger.png');
   background-repeat: no-repeat;
   background-position: center;
-  transition: transform 0.16 linear;
+  transition: transform 0.16s linear;
 }
 
 .claw__hand__finger--left {

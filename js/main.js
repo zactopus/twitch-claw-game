@@ -223,6 +223,8 @@ async function loadContent() {
   const y = getRandomNumber(370, WINDOW_HEIGHT - STATE.claw.height - spacer);
   console.log({ x, y });
   STATE.target.element.style.transform = `translate(${x}px, ${y}px)`;
+
+  await wait(500);
 }
 
 function endTheGame({ twitchClient, countdownTimeout }) {
@@ -316,35 +318,31 @@ function atEndOfCountdown() {
   STATE.claw.graboMeter.element.style.opacity = "1";
 }
 
-function moveClawBackToWinArea() {
-  const grabTime = 5000;
-  setTimeout(() => {
-    const delay = 2000;
-    STATE.claw.element.style.transitionDuration = `${delay}ms`;
+async function moveClawBackToWinArea() {
+  // wait so people can grab
+  await wait(5000);
 
-    // move claw to top of the screen
-    const { x } = STATE.claw.position;
-    const y = 100;
-    updateClaw({ x, y });
+  const delay = 2000;
+  STATE.claw.element.style.transitionDuration = `${delay}ms`;
 
-    setTimeout(() => {
-      // move claw to the left
-      const { y } = STATE.claw.position;
-      const x = 60;
-      updateClaw({ x, y });
+  // move claw to top of the screen
+  const { x } = STATE.claw.position;
+  updateClaw({ x, y: 100 });
+  await wait(delay + 100);
 
-      setTimeout(() => {
-        STATE.game.canChatGrab = false;
-        STATE.claw.graboMeter.element.style.opacity = "0";
-        STATE.claw.graboMeter.progressBar.amount = 0;
-        updateClawFingers({ percentage: 0 });
-        STATE.game.ended = true;
-      }, delay + 100);
-    }, delay + 100);
-  }, grabTime);
+  // move claw to the left
+  const { y } = STATE.claw.position;
+  updateClaw({ x: 60, y });
+  await wait(delay + 100);
+
+  STATE.game.canChatGrab = false;
+  STATE.claw.graboMeter.element.style.opacity = "0";
+  STATE.claw.graboMeter.progressBar.amount = 0;
+  updateClawFingers({ percentage: 0 });
+  STATE.game.ended = true;
 }
 
-function emitUser(user) {
+async function emitUser(user) {
   const animationDuration = 1000;
 
   const userElement = document.createElement("div");
@@ -366,13 +364,12 @@ function emitUser(user) {
   userElement.appendChild(userTextElement);
   document.body.appendChild(userElement);
 
-  setTimeout(() => {
-    userElement.remove();
-  }, animationDuration + 100);
+  await wait(animationDuration + 100);
+  userElement.remove();
 }
 
-function main() {
-  loadContent();
+async function main() {
+  await loadContent();
   document.body.className = "loaded";
 
   const channel = getURLParamChannel();
