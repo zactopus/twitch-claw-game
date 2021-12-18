@@ -138,7 +138,7 @@ function updateClaw(newPosition) {
 }
 
 function updateClawFingers({ percentage }) {
-  const amount = remapNumberRange(percentage, 0, 100, -18, 5);
+  const amount = remapNumberRange(percentage, 0, 100, -30, 5);
   STATE.claw.fingers.left.element.style.transform = `rotate(${amount * -1}deg)`;
   STATE.claw.fingers.right.element.style.transform = `rotate(${amount}deg)`;
 }
