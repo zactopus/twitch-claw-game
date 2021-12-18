@@ -401,7 +401,6 @@ async function main() {
     }, 1000); // 1 sec
 
     twitchClient.on("message", (_channel, data, message) => {
-      console.log("data", data);
       const processedMessage = message.toLowerCase();
       const isBroadcaster =
         data && data.badges && data.badges.broadcaster === "1";
@@ -411,15 +410,15 @@ async function main() {
         isBroadcaster,
       };
 
+      if (user.isBroadcaster && processedMessage.includes("restart")) {
+        window.location.reload();
+        return;
+      }
+
       /*
         if game has ended dont do anything
       */
       if (STATE.game.ended) {
-        return;
-      }
-
-      if (user.isBroadcaster && processedMessage.includes("restart")) {
-        window.location.reload();
         return;
       }
 
