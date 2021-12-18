@@ -234,7 +234,7 @@ function endTheGame({ twitchClient, countdownTimeout }) {
 }
 
 function handleMovement({ message, user }) {
-  const pixelMovementAmount = 35;
+  const pixelMovementAmount = 25;
 
   if (!STATE.game.canChatMoveClaw) {
     return;
@@ -320,7 +320,7 @@ function atEndOfCountdown() {
 
 async function moveClawBackToWinArea() {
   // wait so people can grab
-  await wait(5000);
+  await wait(10000);
 
   const delay = 2000;
   STATE.claw.element.style.transitionDuration = `${delay}ms`;
